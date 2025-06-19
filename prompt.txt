@@ -1,0 +1,50 @@
+# PySpark Framework Design — Reusable Prompt
+
+I want to build a modular, scalable, and robust **PySpark framework** for data pipelines.
+
+## ▶️ The framework must:
+- Be packaged as a Python module (wheel or docker) and versioned independently.
+- Be designed to support **any number of sources** (e.g., BigQuery, GCS, S3, JDBC).
+- Support pipelines that define a **fixed 1:1 mapping between each sequence (query step) and its target**.
+- Be fully **config-driven**: Spark config, sources, sequences, and targets defined in YAML or JSON config files.
+- Allow onboarding of new pipelines by writing **config files** + minimal code that inherits from the framework.
+
+---
+
+## ▶️ Please provide:
+- A **detailed folder structure** for the framework repository, modularized as:
+  - `core/` → base pipeline, runner, sequence executor
+  - `reader/` → base_reader + separate files for bigquery_reader, gcs_reader, s3_reader, jdbc_reader, etc.
+  - `writer/` → base_writer + separate files for bigquery_writer, parquet_writer, s3_writer, jdbc_writer, etc.
+  - `validator/` → config and data validation modules
+  - `utils/` → config_loader, spark_session, logger
+  - `extensions/` → optional helpers like joiner, metrics
+  - `tests/` → structured by module
+
+- An **explanation of each module’s responsibilities**.
+
+- An **outline of the execution flow**:
+  - How SparkSession is created
+  - How sources are loaded and registered
+  - How sequences are executed
+  - How outputs are written
+
+- The **reasoning behind the modular design**:
+  - Easy extension (e.g., adding new source/target types without modifying core logic)
+  - Clean separation of concerns
+
+- The **packaging output**:
+  - What the repo builds (e.g., wheel file, docker image)
+  - How this can be consumed by downstream pipeline repos
+
+---
+
+## ⚡ Important:
+- **Do not generate code.** Just provide:
+  - Folder structure  
+  - Module responsibilities  
+  - Execution flow  
+  - Design reasoning  
+- Emphasize:
+  - How the design supports adding new source/target types cleanly
+  - The separation of config from code
