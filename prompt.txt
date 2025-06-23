@@ -1,50 +1,97 @@
-# PySpark Framework Design — Reusable Prompt
+I’m building a robust, modular, and scalable PySpark framework to simplify onboarding of new pipelines.
 
-I want to build a modular, scalable, and robust **PySpark framework** for data pipelines.
-
-## ▶️ The framework must:
-- Be packaged as a Python module (wheel or docker) and versioned independently.
-- Be designed to support **any number of sources** (e.g., BigQuery, GCS, S3, JDBC).
-- Support pipelines that define a **fixed 1:1 mapping between each sequence (query step) and its target**.
-- Be fully **config-driven**: Spark config, sources, sequences, and targets defined in YAML or JSON config files.
-- Allow onboarding of new pipelines by writing **config files** + minimal code that inherits from the framework.
+🎯 Framework goal:
+- Enable any pipeline to inherit from a base pipeline class and provide config + minimal code
+- Support multiple sources + sequences per pipeline
+- Each sequence runs a query and writes to its target
 
 ---
 
-## ▶️ Please provide:
-- A **detailed folder structure** for the framework repository, modularized as:
-  - `core/` → base pipeline, runner, sequence executor
-  - `reader/` → base_reader + separate files for bigquery_reader, gcs_reader, s3_reader, jdbc_reader, etc.
-  - `writer/` → base_writer + separate files for bigquery_writer, parquet_writer, s3_writer, jdbc_writer, etc.
-  - `validator/` → config and data validation modules
-  - `utils/` → config_loader, spark_session, logger
-  - `extensions/` → optional helpers like joiner, metrics
-  - `tests/` → structured by module
+🌟 Framework design
+The structure looks like this:
 
-- An **explanation of each module’s responsibilities**.
+pyspark-framework/
+├── pyspark_framework/
+│   ├── core/
+│   │   ├── base_pipeline.py         # Abstract pipeline (lifecycle: config, spark, source, sequence)
+│   │   ├── sequence_executor.py     # Runs query + writes output
+│   │   ├── pipeline_runner.py       # Entry point to run a pipeline
+│
+│   ├── reader/
+│   │   ├── base_reader.py           # Abstract reader
+│   │   ├── reader_factory.py        # Creates reader by type
+│   │   ├── bigquery_reader.py
+│   │   ├── s3_reader.py
+│   │   ├── gcs_reader.py
+│   │   ├── jdbc_reader.py
+│
+│   ├── writer/
+│   │   ├── base_writer.py
+│   │   ├── writer_factory.py
+│   │   ├── bigquery_writer.py
+│   │   ├── parquet_writer.py
+│   │   ├── s3_writer.py
+│
+│   ├── utils/
+│   │   ├── config_loader.py         # YAML/JSON loader
+│   │   ├── spark_session.py         # Builds SparkSession dynamically
+│   │   ├── logger.py                # Central logger factory
+│
+│   ├── validator/
+│   │   ├── config_validator.py
+│
+│   ├── tests/                       # Unit tests
+│
+├── setup.py / pyproject.toml         # For packaging as dependency
+├── README.md
 
-- An **outline of the execution flow**:
-  - How SparkSession is created
-  - How sources are loaded and registered
-  - How sequences are executed
-  - How outputs are written
-
-- The **reasoning behind the modular design**:
-  - Easy extension (e.g., adding new source/target types without modifying core logic)
-  - Clean separation of concerns
-
-- The **packaging output**:
-  - What the repo builds (e.g., wheel file, docker image)
-  - How this can be consumed by downstream pipeline repos
+✅ Key features:
+- Config defines sources (source1, source2, …), sequences (query + target)
+- Spark config passed via config
+- Reader + writer factories dynamically load correct class
+- Logs standardized
+- Easy to extend by adding new reader/writer
 
 ---
 
-## ⚡ Important:
-- **Do not generate code.** Just provide:
-  - Folder structure  
-  - Module responsibilities  
-  - Execution flow  
-  - Design reasoning  
-- Emphasize:
-  - How the design supports adding new source/target types cleanly
-  - The separation of config from code
+🚀 Deployment plan on GCP
+👉 I want to deploy + test this on GCP as a Spark job
+
+Deployment plan:
+1️⃣ Package the framework:
+- Build a Python wheel (setup.py / pyproject.toml)
+- OR bake into Docker image
+
+2️⃣ Upload to GCS or Artifact Registry:
+- .whl → GCS bucket
+- Docker → Artifact Registry
+
+3️⃣ Run on Dataproc Serverless:
+- Submit Spark job referencing the wheel or container image
+
+Example gcloud command (wheel):
+gcloud dataproc batches submit pyspark gs://your-bucket/jobs/test_pipeline.py \
+  --region=your-region \
+  --py-files=gs://your-bucket/framework/pyspark_framework-1.0.0-py3-none-any.whl \
+  -- \
+  --config gs://your-bucket/configs/test_config.yaml
+
+Example gcloud command (Docker):
+gcloud dataproc batches submit pyspark gs://your-bucket/jobs/test_pipeline.py \
+  --region=your-region \
+  --container-image=us-docker.pkg.dev/your-project/your-repo/your-image:tag \
+  -- \
+  --config gs://your-bucket/configs/test_config.yaml
+
+---
+
+✨ What I want from you
+👉 Generate or review:
+- Framework code (core, utils, reader — already done)
+- Setup for packaging (setup.py / pyproject.toml)
+- Sample test pipeline + config
+- Deployment-ready Dockerfile or build steps
+- Exact gcloud commands
+
+✅ Assume GCP Dataproc Serverless as runtime for testing.
+✅ Assume I want clean logging, clear error handling, and production readiness.
